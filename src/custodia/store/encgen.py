@@ -83,8 +83,9 @@ class EncryptedOverlay(CSStore):
                                    + 'Missing custodia.key element')
         elif jwe.jose_header['custodia.key'] != key:
             raise CSStoreError(
-                'Secret Pinning check failed! Expected {} got {}'.format(
-                    key, jwe.jose_header['custodia.key']))
+                f"Secret Pinning check failed! Expected {key} got {jwe.jose_header['custodia.key']}"
+            )
+
         return value
 
     def set(self, key, value, replace=False):

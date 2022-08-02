@@ -63,7 +63,7 @@ class KEMKeysStore(SimplePathAuthz):
         return inpath
 
     def find_key(self, kid, usage):
-        dbkey = self._db_key('%s/%s' % (KEY_USAGE_MAP[usage], kid))
+        dbkey = self._db_key(f'{KEY_USAGE_MAP[usage]}/{kid}')
         pubkey = self.store.get(dbkey)
         if pubkey is None:
             raise UnknownPublicKey(kid)
@@ -100,8 +100,7 @@ def check_kem_claims(claims, name):
     if 'sub' not in claims:
         raise InvalidMessage('Missing subject in payload')
     if claims['sub'] != name:
-        raise InvalidMessage('Key name %s does not match subject %s' % (
-            name, claims['sub']))
+        raise InvalidMessage(f"Key name {name} does not match subject {claims['sub']}")
     if 'exp' not in claims:
         raise InvalidMessage('Missing expiration time in payload')
     if claims['exp'] - (10 * 60) > int(time.time()):
@@ -127,7 +126,7 @@ class KEMHandler(MessageHandler):
 
         key = self.kkstore.find_key(header['kid'], usage)
         if key is None:
-            raise UnknownPublicKey('Key found [kid:%s]' % header['kid'])
+            raise UnknownPublicKey(f"Key found [kid:{header['kid']}]")
         return json_decode(key)
 
     def parse(self, msg, name):
@@ -145,7 +144,7 @@ class KEMHandler(MessageHandler):
         try:
             jtok = JWT(jwt=msg)
         except Exception as e:
-            raise InvalidMessage('Failed to parse message: %s' % str(e))
+            raise InvalidMessage(f'Failed to parse message: {str(e)}')
 
         try:
             token = jtok.token
@@ -156,10 +155,8 @@ class KEMHandler(MessageHandler):
                 payload = token.payload.decode('utf-8')
                 token = JWS()
                 token.deserialize(payload)
-            elif isinstance(token, JWS):
-                pass
-            else:
-                raise TypeError("Invalid Token type: %s" % type(jtok))
+            elif not isinstance(token, JWS):
+                raise TypeError(f"Invalid Token type: {type(jtok)}")
 
             # Retrieve client keys for later use
             self.client_keys = [
@@ -171,7 +168,7 @@ class KEMHandler(MessageHandler):
             claims = json_decode(token.payload)
         except Exception as e:
             logger.debug('Failed to validate message', exc_info=True)
-            raise InvalidMessage('Failed to validate message: %s' % str(e))
+            raise InvalidMessage(f'Failed to validate message: {str(e)}')
 
         check_kem_claims(claims, name)
         self.name = name

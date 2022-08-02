@@ -37,7 +37,7 @@ def instance_name(string):
     """
     invalid = ':/@'
     if set(string).intersection(invalid):
-        msg = 'Invalid instance name {}'.format(string)
+        msg = f'Invalid instance name {string}'
         raise argparse.ArgumentTypeError(msg)
     return string
 

@@ -28,7 +28,7 @@ class SqliteStore(CSStore):
 
     def get(self, key):
         self.logger.debug("Fetching key %s", key)
-        query = "SELECT value from %s WHERE key=?" % self.table
+        query = f"SELECT value from {self.table} WHERE key=?"
         try:
             conn = sqlite3.connect(self.dburi)
             c = conn.cursor()
@@ -38,10 +38,7 @@ class SqliteStore(CSStore):
             self.logger.exception("Error fetching key %s", key)
             raise CSStoreError('Error occurred while trying to get key')
         self.logger.debug("Fetched key %s got result: %r", key, value)
-        if len(value) > 0:
-            return value[0][0]
-        else:
-            return None
+        return value[0][0] if len(value) > 0 else None
 
     def _create(self, cur):
         create = "CREATE TABLE IF NOT EXISTS %s " \
@@ -90,8 +87,8 @@ class SqliteStore(CSStore):
     def list(self, keyfilter=''):
         path = keyfilter.rstrip('/')
         self.logger.debug("Listing keys matching %s", path)
-        child_prefix = path if path == '' else path + '/'
-        search = "SELECT key, value FROM %s WHERE key LIKE ?" % self.table
+        child_prefix = path if path == '' else f'{path}/'
+        search = f"SELECT key, value FROM {self.table} WHERE key LIKE ?"
         key = "%s%%" % (path,)
         try:
             conn = sqlite3.connect(self.dburi)
@@ -103,16 +100,16 @@ class SqliteStore(CSStore):
         self.logger.debug("Searched for %s got result: %r", path, rows)
         if len(rows) > 0:
             parent_exists = False
-            result = list()
+            result = []
             for key, value in rows:
-                if key == path or key == child_prefix:
+                if key in [path, child_prefix]:
                     parent_exists = True
                     continue
                 if not key.startswith(child_prefix):
                     continue
                 result_value = key[len(child_prefix):].lstrip('/')
                 if not value:
-                    result.append(result_value + '/')
+                    result.append(f'{result_value}/')
                 else:
                     result.append(result_value)
             if result:
@@ -129,7 +126,7 @@ class SqliteStore(CSStore):
 
     def cut(self, key):
         self.logger.debug("Removing key %s", key)
-        query = "DELETE from %s WHERE key=?" % self.table
+        query = f"DELETE from {self.table} WHERE key=?"
         try:
             conn = sqlite3.connect(self.dburi)
             with conn:
@@ -140,6 +137,4 @@ class SqliteStore(CSStore):
             raise CSStoreError('Error occurred while trying to cut key')
         self.logger.debug("Key %s %s", key,
                           "removed" if r.rowcount > 0 else "not found")
-        if r.rowcount > 0:
-            return True
-        return False
+        return r.rowcount > 0

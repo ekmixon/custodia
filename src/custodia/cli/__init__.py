@@ -54,7 +54,7 @@ def server_check(arg):
         raise argparse.ArgumentTypeError(
             'Unix socket path must start with / or ./')
     # assume it is a unix socket
-    return 'http+unix://{}'.format(url_escape(arg, ''))
+    return f"http+unix://{url_escape(arg, '')}"
 
 
 def instance_check(arg):
@@ -76,10 +76,7 @@ def timeout(arg):
         raise argparse.ArgumentTypeError('Argument is not a float')
     if arg < 0.0:
         raise argparse.ArgumentTypeError('Argument is negative')
-    if arg == 0.0:
-        # no timeout
-        return None
-    return arg
+    return None if arg == 0.0 else arg
 
 
 group = main_parser.add_mutually_exclusive_group()
@@ -234,7 +231,7 @@ def handle_plugins(args):
     result = []
     errmsg = "**ERR** {0} ({1.__class__.__name__}: {1})"
     for plugin in PLUGINS:
-        result.append('[{}]'.format(plugin))
+        result.append(f'[{plugin}]')
         eps = pkg_resources.iter_entry_points(plugin)
         eps = sorted(eps, key=operator.attrgetter('name'))
         for ep in eps:
@@ -324,16 +321,16 @@ def parse_args(arglist=None):
         args.verbose = True
 
     if not args.server:
-        instance_socket = '/var/run/custodia/{}.sock'.format(args.instance)
-        args.server = 'http+unix://{}'.format(url_escape(instance_socket, ''))
+        instance_socket = f'/var/run/custodia/{args.instance}.sock'
+        args.server = f"http+unix://{url_escape(instance_socket, '')}"
 
-    if args.server.startswith('http+unix://'):
-        # append uds-path
-        if not args.server.endswith('/'):
-            udspath = args.uds_urlpath
-            if not udspath.startswith('/'):
-                udspath = '/' + udspath
-            args.server += udspath
+    if args.server.startswith('http+unix://') and not args.server.endswith(
+        '/'
+    ):
+        udspath = args.uds_urlpath
+        if not udspath.startswith('/'):
+            udspath = f'/{udspath}'
+        args.server += udspath
 
     args.client_conn = CustodiaSimpleClient(args.server)
     args.client_conn.timeout = args.timeout

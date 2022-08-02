@@ -15,7 +15,7 @@ class CustodiaSectionProxy(configparser.SectionProxy):
     def getsecret(self, option, fallback=None, **kwargs):
         # keyword-only arguments
         raw = kwargs.get('raw', False)
-        var = kwargs.get('vars', None)
+        var = kwargs.get('vars')
 
         return self._parser.getsecret(self._name, option, raw=raw,
                                       vars=var, fallback=fallback)
@@ -91,12 +91,10 @@ class CustodiaConfigParser(configparser.ConfigParser):
             sec = self.custodia_client_section
             url = self.get(sec, 'url')
             client = CustodiaSimpleClient(url)
-            headers = self.get(sec, 'headers', fallback=None)
-            if headers:
+            if headers := self.get(sec, 'headers', fallback=None):
                 headers = json.loads(headers)
                 client.headers.update(headers)
-            tls_cafile = self.get(sec, 'tls_cafile', fallback=None)
-            if tls_cafile:
+            if tls_cafile := self.get(sec, 'tls_cafile', fallback=None):
                 client.set_ca_cert(tls_cafile)
             certfile = self.get(sec, 'tls_certfile', fallback=None)
             keyfile = self.get(sec, 'tls_keyfile', fallback=None)
@@ -112,9 +110,7 @@ class CustodiaConfigParser(configparser.ConfigParser):
         # keyword-only arguments, vars and fallback are directly passed through
         raw = kwargs.get('raw', False)
         value = self.get(section, option, **kwargs)
-        if raw:
-            return value
-        return self.custodia_client.get_secret(value)
+        return value if raw else self.custodia_client.get_secret(value)
 
 
 def demo():

@@ -337,11 +337,11 @@ class Secrets(HTTPConsumer):
 
         try:
             default = request.get('default_namespace', None)
-            ok = self._parent_exists(default, trail)
-            if not ok:
+            if ok := self._parent_exists(default, trail):
+                ok = self.root.store.set(key, msg.payload)
+            else:
                 raise HTTPError(404)
 
-            ok = self.root.store.set(key, msg.payload)
         except CSStoreDenied:
             self.logger.exception(
                 "Set: Permission to perform this operation was denied")

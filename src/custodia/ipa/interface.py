@@ -44,11 +44,7 @@ class IPAInterface(HTTPAuthenticator):
         if section != IPA_SECTIONNAME:
             raise ValueError(section)
 
-        if api is None:
-            self._api = ipalib.api
-        else:
-            self._api = api
-
+        self._api = ipalib.api if api is None else api
         if self._api.isdone('bootstrap'):
             raise RuntimeError("IPA API already initialized")
 
@@ -71,9 +67,7 @@ class IPAInterface(HTTPAuthenticator):
             # already initialized
             return
 
-        # get rundir from own section or DEFAULT
-        rundir = cfgparser.get(self.section, 'rundir', fallback=None)
-        if rundir:
+        if rundir := cfgparser.get(self.section, 'rundir', fallback=None):
             self._ipa_config['dot_ipa'] = rundir
             self._ipa_config['home'] = rundir
             # workaround https://pagure.io/freeipa/issue/6761#comment-440329

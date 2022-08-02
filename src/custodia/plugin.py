@@ -34,7 +34,7 @@ class INHERIT_GLOBAL(object):  # noqa: N801
         self.default = default
 
     def __repr__(self):
-        return 'INHERIT_GLOBAL({})'.format(self.default)
+        return f'INHERIT_GLOBAL({self.default})'
 
 
 REQUIRED = _Required()
@@ -89,7 +89,7 @@ class OptionHandler(object):
         typ = po.typ
         default = po.default
 
-        handler = getattr(self, '_get_{}'.format(typ), None)
+        handler = getattr(self, f'_get_{typ}', None)
         if handler is None:
             raise ValueError(typ)
         self.seen.add(name)
@@ -107,12 +107,14 @@ class OptionHandler(object):
         # pylint: enable=not-callable
 
     def check_surplus(self):
-        surplus = []
-        for name, _ in self.parser.items(self.section):
-            if (name not in self.seen and not
-                    self.parser.has_option(configparser.DEFAULTSECT, name)):
-                surplus.append(name)
-        return surplus
+        return [
+            name
+            for name, _ in self.parser.items(self.section)
+            if (
+                name not in self.seen
+                and not self.parser.has_option(configparser.DEFAULTSECT, name)
+            )
+        ]
 
     def _get_int(self, section, name, default):
         return self.parser.getint(section, name, fallback=default)
@@ -133,40 +135,28 @@ class OptionHandler(object):
 
     def _get_regex(self, section, name, default):
         value = self.parser.get(section, name, fallback=default)
-        if not value:
-            return None
-        else:
-            return re.compile(value)
+        return re.compile(value) if value else None
 
     def _get_str(self, section, name, default):
         return self.parser.get(section, name, fallback=default)
 
     def _split_string(self, value):
-        if ',' in value:
-            values = value.split(',')
-        else:
-            values = value.split(' ')
-        return list(v.strip() for v in values if v.strip())
+        values = value.split(',') if ',' in value else value.split(' ')
+        return [v.strip() for v in values if v.strip()]
 
     def _get_str_set(self, section, name, default):
         try:
             value = self.parser.get(section, name)
         except configparser.NoOptionError:
             return default
-        if not value or not value.strip():
-            return None
-        else:
-            return set(self._split_string(value))
+        return set(self._split_string(value)) if value and value.strip() else None
 
     def _get_str_list(self, section, name, default):
         try:
             value = self.parser.get(section, name)
         except configparser.NoOptionError:
             return default
-        if not value or not value.strip():
-            return None
-        else:
-            return self._split_string(value)
+        return None if not value or not value.strip() else self._split_string(value)
 
     def _get_store(self, section, name, default):
         return self.parser.get(section, name, fallback=default)
@@ -241,10 +231,7 @@ class PluginOption(object):
 
     def __init__(self, typ, default, doc):
         self.name = None
-        if typ in {str, int, float, bool, oct, hex}:
-            self.typ = typ.__name__
-        else:
-            self.typ = typ
+        self.typ = typ.__name__ if typ in {str, int, float, bool, oct, hex} else typ
         self.default = default
         self.doc = doc
 
@@ -327,12 +314,10 @@ class CustodiaPlugin(object):
                 else:
                     setattr(self, option.name, value)
 
-            surplus = opt.check_surplus()
-            if surplus:
-                raise ValueError('Surplus options in {}: {}'.format(
-                    section, surplus))
+            if surplus := opt.check_surplus():
+                raise ValueError(f'Surplus options in {section}: {surplus}')
 
-            origin = '%s-[%s]' % (type(self).__name__, section)
+            origin = f'{type(self).__name__}-[{section}]'
             debug = self.debug  # pylint: disable=no-member
         else:
             # old style configuration
@@ -357,8 +342,9 @@ class CustodiaPlugin(object):
         store_plugin = config['stores'].get(self.store_name)
         if store_plugin is None:
             raise ValueError(
-                "'{}' references non-existing store '{}'".format(
-                    self.section, self.store_name))
+                f"'{self.section}' references non-existing store '{self.store_name}'"
+            )
+
         # pylint: disable=attribute-defined-outside-init
         self.store = store_plugin
         # pylint: enable=attribute-defined-outside-init
@@ -427,7 +413,7 @@ class HTTPConsumer(CustodiaPlugin):
     """
     def __init__(self, config, section=None):
         super(HTTPConsumer, self).__init__(config, section)
-        self.subs = dict()
+        self.subs = {}
         self.root = self
 
     def add_sub(self, name, sub):
@@ -458,7 +444,7 @@ class HTTPConsumer(CustodiaPlugin):
 
     def handle(self, request):
         handler = self._find_handler(request)
-        response = {'headers': dict()}
+        response = {'headers': {}}
 
         # Handle request
         output = handler(request, response)
@@ -476,15 +462,15 @@ class HTTPConsumer(CustodiaPlugin):
         response['output'] = output
 
         if output is not None and not hasattr(output, 'read') \
-                and not isinstance(output, six.binary_type):
+                    and not isinstance(output, six.binary_type):
             msg = "Handler {} returned unsupported type {} ({}):\n{!r}"
             raise TypeError(msg.format(handler, type(output), ct, output))
 
-        if output is not None and 'Content-Length' not in response['headers']:
-            if hasattr(output, 'read'):
-                # LOG: warning file-type objects should set Content-Length
-                pass
-            else:
-                response['headers']['Content-Length'] = str(len(output))
+        if (
+            output is not None
+            and 'Content-Length' not in response['headers']
+            and not hasattr(output, 'read')
+        ):
+            response['headers']['Content-Length'] = str(len(output))
 
         return response

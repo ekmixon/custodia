@@ -31,13 +31,12 @@ class CustodiaConfig(object):
         configpath = self.args.configfile.name
         instance = self.args.instance
         defaults = {
-            # Do not use getfqdn(). Internaly it calls gethostbyaddr which
-            # might perform a DNS query.
             'hostname': socket.gethostname(),
             'configdir': os.path.dirname(configpath),
-            'confdpattern': os.path.join(configpath + '.d', '*.conf'),
-            'instance': instance if instance else '',
+            'confdpattern': os.path.join(f'{configpath}.d', '*.conf'),
+            'instance': instance or '',
         }
+
         for name, path in self.DEFAULT_PATHS:
             defaults[name] = os.path.abspath(path.format(**defaults))
         return defaults
@@ -74,8 +73,7 @@ class CustodiaConfig(object):
 
         configfiles = [self.args.configfile.name]
 
-        pattern = self.parser.get(u'DEFAULT', u'confdpattern')
-        if pattern:
+        if pattern := self.parser.get(u'DEFAULT', u'confdpattern'):
             confdfiles = glob.glob(pattern)
             confdfiles.sort()
             for confdfile in confdfiles:
@@ -130,13 +128,12 @@ class CustodiaConfig(object):
         if not url and not sock:
             # no option but, use default socket path
             socketdir = self.parser.get(u'DEFAULT', u'socketdir')
-            name = self.args.instance if self.args.instance else 'custodia'
-            sock = os.path.join(socketdir, name + '.sock')
+            name = self.args.instance or 'custodia'
+            sock = os.path.join(socketdir, f'{name}.sock')
 
         if sock:
             server_socket = os.path.abspath(sock)
-            config['server_url'] = 'http+unix://{}/'.format(
-                url_escape(server_socket, ''))
+            config['server_url'] = f"http+unix://{url_escape(server_socket, '')}/"
 
     def __call__(self):
         self.defaults = self.get_defaults()

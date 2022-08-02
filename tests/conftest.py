@@ -34,15 +34,15 @@ def pytest_addoption(parser):
 
 def pytest_runtest_setup(item):
     skip_servertest = item.config.getoption(SKIP_SERVERTEST)
-    skiptest = False
-    if skip_servertest:
-        # pytest < 4
-        if hasattr(item, 'get_marker'):
-            if item.get_marker("servertest"):
-                skiptest = True
-        # pytest >= 4
-        elif item.get_closest_marker("servertest"):
-            skiptest = True
+    skiptest = bool(
+        skip_servertest
+        and (
+            hasattr(item, 'get_marker')
+            and item.get_marker("servertest")
+            or not hasattr(item, 'get_marker')
+            and item.get_closest_marker("servertest")
+        )
+    )
 
     if skiptest:
         # args has --skip-servertests and test is marked as servertest

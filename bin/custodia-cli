@@ -15,10 +15,7 @@ def main(dist='custodia', group='console_scripts', name='custodia-cli'):
     ep = pkg_resources.get_entry_info(dist, group, name)
     if os.path.normpath(ep.dist.location) != os.path.normpath(SRC):
         raise RuntimeError(ep.dist.location)
-    if hasattr(ep, 'resolve'):
-        func = ep.resolve()
-    else:
-        func = ep.load(require=False)
+    func = ep.resolve() if hasattr(ep, 'resolve') else ep.load(require=False)
     sys.exit(func())
 
 if __name__ == '__main__':

@@ -37,7 +37,7 @@ class Validator(object):
 
         if isinstance(msg['type'], list):
             if len(msg['type']) != 1:
-                raise InvalidMessage('Type is multivalued: %s' % msg['type'])
+                raise InvalidMessage(f"Type is multivalued: {msg['type']}")
             msg_type = msg['type'][0]
         else:
             msg_type = msg['type']
@@ -47,7 +47,7 @@ class Validator(object):
 
         if isinstance(msg['value'], list):
             if len(msg['value']) != 1:
-                raise InvalidMessage('Value is multivalued: %s' % msg['value'])
+                raise InvalidMessage(f"Value is multivalued: {msg['value']}")
             msg_value = msg['value'][0]
         else:
             msg_value = msg['value']

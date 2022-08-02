@@ -47,12 +47,9 @@ def test_parse_config(args):
         'auditlog': u'/var/log/custodia/audit.log',
         'authenticators': {},
         'authorizers': {},
-        'confdpattern': EMPTY_CONF + u'.d/*.conf',
+        'confdpattern': f'{EMPTY_CONF}.d/*.conf',
         'configdir': HERE,
-        'configfiles': [
-            EMPTY_CONF,
-            EMPTY_CONF + u'.d/root.conf'
-        ],
+        'configfiles': [EMPTY_CONF, f'{EMPTY_CONF}.d/root.conf'],
         'consumers': {},
         'debug': False,
         'hostname': socket.gethostname(),
@@ -65,7 +62,7 @@ def test_parse_config(args):
         'socketdir': u'/var/run/custodia',
         'stores': {},
         'tls_verify_client': False,
-        'umask': 23
+        'umask': 23,
     }
 
 
@@ -79,12 +76,9 @@ def test_parse_config_instance(args_instance):
         'auditlog': u'/var/log/custodia/testing/audit.log',
         'authenticators': {},
         'authorizers': {},
-        'confdpattern': EMPTY_CONF + u'.d/*.conf',
+        'confdpattern': f'{EMPTY_CONF}.d/*.conf',
         'configdir': HERE,
-        'configfiles': [
-            EMPTY_CONF,
-            EMPTY_CONF + u'.d/root.conf'
-        ],
+        'configfiles': [EMPTY_CONF, f'{EMPTY_CONF}.d/root.conf'],
         'consumers': {},
         'debug': True,
         'hostname': socket.gethostname(),
@@ -97,5 +91,5 @@ def test_parse_config_instance(args_instance):
         'socketdir': u'/var/run/custodia',
         'stores': {},
         'tls_verify_client': False,
-        'umask': 23
+        'umask': 23,
     }

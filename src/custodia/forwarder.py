@@ -42,10 +42,10 @@ class Forwarder(HTTPConsumer):
 
     def _headers(self, request):
         headers = {}
-        headers.update(self.forward_headers)
+        headers |= self.forward_headers
         loop = request['headers'].get('X-LOOP-CUSTODIA', None)
         if loop is not None:
-            headers['X-LOOP-CUSTODIA'] += ',' + loop
+            headers['X-LOOP-CUSTODIA'] += f',{loop}'
         return headers
 
     def _response(self, reply, response):

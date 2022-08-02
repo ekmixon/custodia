@@ -273,9 +273,11 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 
     @property
     def peer_cert(self):
-        if not hasattr(self.request, 'getpeercert'):
-            return None
-        return self.request.getpeercert()
+        return (
+            self.request.getpeercert()
+            if hasattr(self.request, 'getpeercert')
+            else None
+        )
 
     def parse_request(self):
         if not BaseHTTPRequestHandler.parse_request(self):
@@ -314,10 +316,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get('content-length', 0))
         if length > MAX_REQUEST_SIZE:
             raise HTTPError(413)
-        if length == 0:
-            self.body = None
-        else:
-            self.body = self.rfile.read(length)
+        self.body = None if length == 0 else self.rfile.read(length)
 
     def handle_one_request(self):
         if self.request.family == socket.AF_UNIX:
@@ -483,7 +482,7 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
         while path_chain:
             if path_chain in config['consumers']:
                 con = config['consumers'][path_chain]
-                if len(trail) != 0:
+                if trail:
                     request['trail'] = trail
                 return con.handle(request)
             trail.insert(0, path_chain[-1])
@@ -507,7 +506,7 @@ class HTTPServer(object):
             # Unix socket
             address = unquote(url.netloc)
             if not address:
-                raise ValueError('Empty address {}'.format(url))
+                raise ValueError(f'Empty address {url}')
             logger.info('Serving on Unix socket %s', address)
             serverclass = ForkingUnixHTTPServer
         elif url.scheme == 'http':
@@ -521,7 +520,7 @@ class HTTPServer(object):
             logger.info('Serving on %s (HTTPS)', url.netloc)
             serverclass = ForkingTLSServer
         else:
-            raise ValueError('Unknown URL Scheme: %s' % url.scheme)
+            raise ValueError(f'Unknown URL Scheme: {url.scheme}')
         return serverclass, address
 
     def _get_systemd_socket(self, address):
@@ -537,21 +536,13 @@ class HTTPServer(object):
             if not sd.is_socket_inet(fds[0], family=socket.AF_INET6,
                                      type=socket.SOCK_STREAM,
                                      listening=True, port=port):
-                raise ValueError(
-                    "FD {} is not TCP IPv6 socket on port {}".format(
-                        fds[0], port
-                    )
-                )
+                raise ValueError(f"FD {fds[0]} is not TCP IPv6 socket on port {port}")
             logger.info('Using systemd socket activation on port %i', port)
             sock = socket.fromfd(fds[0], socket.AF_INET6, socket.SOCK_STREAM)
         else:
             if not sd.is_socket_unix(fds[0], socket.SOCK_STREAM,
                                      listening=True, path=address):
-                raise ValueError(
-                    "FD {} is not Unix stream socket on path {}".format(
-                        fds[0], address
-                    )
-                )
+                raise ValueError(f"FD {fds[0]} is not Unix stream socket on path {address}")
             logger.info('Using systemd socket activation on path %s', address)
             sock = socket.fromfd(fds[0], socket.AF_UNIX, socket.SOCK_STREAM)
 

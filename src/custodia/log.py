@@ -38,12 +38,11 @@ class CustodiaFormatter(logging.Formatter):
                 )
 
         result = super(CustodiaFormatter, self).format(record)
-        if short_exc:
-            # format() adds \n between message and exc_text
-            text, exc = result.rsplit(u'\n', 1)
-            return u"{0} ({1})".format(text, exc)
-        else:
+        if not short_exc:
             return result
+        # format() adds \n between message and exc_text
+        text, exc = result.rsplit(u'\n', 1)
+        return u"{0} ({1})".format(text, exc)
 
 
 class CustodiaLoggingAdapter(logging.LoggerAdapter):
@@ -88,9 +87,10 @@ def setup_logging(debug=False, auditfile=None, handler=None):
     # remove handler instance from root handler to prevent multiple
     # output handlers.
     handler_cls = type(handler)
-    root_logger.handlers[:] = list(
+    root_logger.handlers[:] = [
         h for h in root_logger.handlers if not isinstance(h, handler_cls)
-    )
+    ]
+
 
     # configure handler
     handler.setFormatter(CustodiaFormatter(

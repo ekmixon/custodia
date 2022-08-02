@@ -82,10 +82,7 @@ class CustodiaHTTPClient(object):
         self.session.verify = cafile
 
     def set_client_cert(self, certfile, keyfile=None):
-        if keyfile is None:
-            self.session.cert = certfile
-        else:
-            self.session.cert = (certfile, keyfile)
+        self.session.cert = certfile if keyfile is None else (certfile, keyfile)
 
     def set_gssapi_auth(self, **kwargs):
         if requests_gssapi is None:
@@ -96,9 +93,9 @@ class CustodiaHTTPClient(object):
         return self.url.rstrip('/') + '/' + path.lstrip('/')
 
     def _add_headers(self, **kwargs):
-        headers = kwargs.get('headers', None)
+        headers = kwargs.get('headers')
         if headers is None:
-            headers = dict()
+            headers = {}
         headers.update(self.headers)
         return headers
 
@@ -135,7 +132,7 @@ class CustodiaHTTPClient(object):
         return self._request(self.session.put, path, **kwargs)
 
     def container_name(self, name):
-        return name if name.endswith('/') else name + '/'
+        return name if name.endswith('/') else f'{name}/'
 
     def create_container(self, name):
         raise NotImplementedError
@@ -177,7 +174,7 @@ class CustodiaSimpleClient(CustodiaHTTPClient):
         simple = r.json()
         ktype = simple.get("type", None)
         if ktype != "simple":
-            raise TypeError("Invalid key type: %s" % ktype)
+            raise TypeError(f"Invalid key type: {ktype}")
         return simple["value"]
 
     def set_secret(self, name, value):

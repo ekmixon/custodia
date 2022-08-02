@@ -45,10 +45,7 @@ class _CSRGenerator(object):
     """)
 
     def __init__(self, plugin, backend=None):
-        if backend is None:
-            self.backend = default_backend()
-        else:
-            self.backend = backend
+        self.backend = default_backend() if backend is None else backend
         self.plugin = plugin
         self._privkey = self._gen_private()
 
@@ -111,10 +108,7 @@ class _CSRGenerator(object):
 
     def _dump_x509name(self, name):
         # no quoting, just for debugging
-        out = []
-        # pylint: disable=protected-access
-        for nameattr in list(name):
-            out.append("{}={}".format(nameattr.oid._name, nameattr.value))
+        out = [f"{nameattr.oid._name}={nameattr.value}" for nameattr in list(name)]
         # pylint: enable=protected-access
         return ', '.join(out)
 
@@ -211,16 +205,16 @@ class IPACertRequest(CSStore):
         parts = key.split(u'/')
         # XXX why is 'keys' added in in Secrets._db_key()?
         if len(parts) != 3 or parts[0] != 'keys':
-            raise CSStoreDenied("Invalid cert request key '{}'".format(key))
+            raise CSStoreDenied(f"Invalid cert request key '{key}'")
         service, hostname = parts[1:3]
         # pylint: disable=unsupported-membership-test
         if service not in self.allowed_services:
-            raise CSStoreDenied("Invalid service '{}'".format(key))
+            raise CSStoreDenied(f"Invalid service '{key}'")
         principal = krb5_format_service_principal_name(
             service, hostname, self.ipa.env.realm
         )
         # use cert prefix in storage key
-        key = u"cert/{}/{}".format(service, hostname)
+        key = f"cert/{service}/{hostname}"
         return key, hostname, principal
 
     def get(self, key):
@@ -235,21 +229,15 @@ class IPACertRequest(CSStore):
         try:
             data = self._request_cert(hostname, principal)
         except AuthorizationError:
-            msg = "Unauthorized request for '{}' ({})".format(
-                hostname, principal
-            )
+            msg = f"Unauthorized request for '{hostname}' ({principal})"
             self.logger.exception(msg)
             raise CSStoreDenied(msg)
         except NotFound:
-            msg = "Host '{}' or principal '{}' not found".format(
-                hostname, principal
-            )
+            msg = f"Host '{hostname}' or principal '{principal}' not found"
             self.logger.exception(msg)
             raise CSStoreDenied(msg)
         except Exception:
-            msg = "Failed to request cert '{}' ({})".format(
-                hostname, principal
-            )
+            msg = f"Failed to request cert '{hostname}' ({principal})"
             self.logger.exception(msg)
             raise CSStoreError(msg)
         self.store.set(key, data, replace=True)
@@ -293,10 +281,8 @@ class IPACertRequest(CSStore):
                 validnotafter_from=datetime.datetime.utcnow(),
             )
             # XXX cert_find has no filter for valid cert
-            certs = list(
-                cert for cert in response['result']
-                if not cert[u'revoked']
-            )
+            certs = [cert for cert in response['result'] if not cert[u'revoked']]
+
             for cert in certs:
                 self.logger.info(
                     'Revoking cert %i (subject: %s, issuer: %s)',

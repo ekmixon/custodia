@@ -9,13 +9,13 @@ from .base import CustodiaServerRunner
 
 class TestContainer(CustodiaServerRunner):
     def test_create_container(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
+        container = f'secrets/bucket{self.get_unique_number()}/'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
 
     def test_create_container_again(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
+        container = f'secrets/bucket{self.get_unique_number()}/'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -24,22 +24,22 @@ class TestContainer(CustodiaServerRunner):
         assert resp.status_code == 200
 
     def test_create_container_invalid_format(self, custodia_server):
-        invalid_container = 'secrets/bucket{}'.format(self.get_unique_number())
+        invalid_container = f'secrets/bucket{self.get_unique_number()}'
 
         resp = custodia_server.post(invalid_container,
                                     headers=self.request_headers)
         assert resp.status_code == 405
 
     def test_create_container_forbidden_key(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
+        container = f'secrets/bucket{self.get_unique_number()}/'
 
         resp = custodia_server.post(container, headers={})
         assert resp.status_code == 403
 
     def test_list_container(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
-        yourkey = '{}yourkey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
+        yourkey = f'{container}yourkey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -70,7 +70,7 @@ class TestContainer(CustodiaServerRunner):
         assert 'yourkey' in data
 
     def test_remove_container(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
+        container = f'secrets/bucket{self.get_unique_number()}/'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -86,8 +86,8 @@ class TestContainer(CustodiaServerRunner):
         assert resp.status_code == 404
 
     def test_remove_container_not_empty(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -111,7 +111,7 @@ class TestContainer(CustodiaServerRunner):
         assert 'mykey' in data
 
     def test_remove_container_not_found(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
+        container = f'secrets/bucket{self.get_unique_number()}/'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -130,8 +130,8 @@ class TestContainer(CustodiaServerRunner):
         assert resp.status_code == 404
 
     def test_remove_container_forbidden_key(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201

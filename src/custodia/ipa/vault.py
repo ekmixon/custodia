@@ -27,11 +27,10 @@ def krb5_unparse_principal_name(name):
     :return: (service, host, realm) or (None, username, realm)
     """
     prefix, realm = name.split(u'@')
-    if u'/' in prefix:
-        service, host = prefix.rsplit(u'/', 1)
-        return service, host, realm
-    else:
+    if u'/' not in prefix:
         return None, prefix, realm
+    service, host = prefix.rsplit(u'/', 1)
+    return service, host, realm
 
 
 class IPAVault(CSStore):
@@ -67,8 +66,7 @@ class IPAVault(CSStore):
         with self.ipa:
             # retrieve and cache KRA transport cert
             response = self.ipa.Command.vaultconfig_show()
-            servers = response[u'result'].get(u'kra_server_server', ())
-            if servers:
+            if servers := response[u'result'].get(u'kra_server_server', ()):
                 self.logger.info("KRA server(s) %s", ', '.join(servers))
 
         service, user_host, realm = krb5_unparse_principal_name(
@@ -129,7 +127,7 @@ class IPAVault(CSStore):
                 self.logger.info("Key '%s' not found: %s", key, e)
                 return None
             except Exception:
-                msg = "Failed to retrieve entry {}".format(key)
+                msg = f"Failed to retrieve entry {key}"
                 self.logger.exception(msg)
                 raise CSStoreError(msg)
             else:
@@ -148,22 +146,22 @@ class IPAVault(CSStore):
                 if not replace:
                     raise CSStoreExists(key)
             except AuthorizationError:
-                msg = "vault_add denied for entry {}".format(key)
+                msg = f"vault_add denied for entry {key}"
                 self.logger.exception(msg)
                 raise CSStoreDenied(msg)
             except Exception:
-                msg = "Failed to add entry {}".format(key)
+                msg = f"Failed to add entry {key}"
                 self.logger.exception(msg)
                 raise CSStoreError(msg)
             try:
                 ipa.Command.vault_archive(
                     key, data=value, **self._vault_args)
             except AuthorizationError:
-                msg = "vault_archive denied for entry {}".format(key)
+                msg = f"vault_archive denied for entry {key}"
                 self.logger.exception(msg)
                 raise CSStoreDenied(msg)
             except Exception:
-                msg = "Failed to archive entry {}".format(key)
+                msg = f"Failed to archive entry {key}"
                 self.logger.exception(msg)
                 raise CSStoreError(msg)
 
@@ -201,11 +199,11 @@ class IPAVault(CSStore):
             except NotFound:
                 return False
             except AuthorizationError:
-                msg = "vault_del denied for entry {}".format(key)
+                msg = f"vault_del denied for entry {key}"
                 self.logger.exception(msg)
                 raise CSStoreDenied(msg)
             except Exception:
-                msg = "Failed to delete entry {}".format(key)
+                msg = f"Failed to delete entry {key}"
                 self.logger.exception(msg)
                 raise CSStoreError(msg)
             else:

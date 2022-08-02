@@ -76,7 +76,7 @@ class TestsCommandLine(unittest.TestCase):
 
     def test_connection_error_with_server_option(self):
         host_port = find_free_address()
-        invalid_server_name = 'http://{}/secrets/key'.format(host_port)
+        invalid_server_name = f'http://{host_port}/secrets/key'
         with self.assertRaises(subprocess.CalledProcessError) as cm:
             self._custodia_cli('--server',
                                invalid_server_name,

@@ -36,25 +36,21 @@ def _load_plugin_class(menu, name):
 
     Entry points are preferred over dotted import path.
     """
-    group = 'custodia.{}'.format(menu)
+    group = f'custodia.{menu}'
     eps = list(pkg_resources.iter_entry_points(group, name))
     if len(eps) > 1:
-        raise ValueError(
-            "Multiple entry points for {} {}: {}".format(menu, name, eps))
+        raise ValueError(f"Multiple entry points for {menu} {name}: {eps}")
     elif len(eps) == 1:
         # backwards compatibility with old setuptools
         ep = eps[0]
-        if hasattr(ep, 'resolve'):
-            return ep.resolve()
-        else:
-            return ep.load(require=False)
+        return ep.resolve() if hasattr(ep, 'resolve') else ep.load(require=False)
     elif '.' in name:
         # fall back to old style dotted name
         module, classname = name.rsplit('.', 1)
         m = importlib.import_module(module)
         return getattr(m, classname)
     else:
-        raise ValueError("{}: {} not found".format(menu, name))
+        raise ValueError(f"{menu}: {name} not found")
 
 
 def _create_plugin(cfgparser, section, menu):
@@ -66,7 +62,7 @@ def _create_plugin(cfgparser, section, menu):
     try:
         handler = _load_plugin_class(menu, handler_name)
         classname = handler.__name__
-        hconf['facility_name'] = '%s-[%s]' % (classname, section)
+        hconf['facility_name'] = f'{classname}-[{section}]'
     except Exception as e:  # pylint: disable=broad-except
         raise ValueError('Invalid format for "handler" option '
                          '[%r]: %s' % (e, handler_name))
@@ -76,7 +72,7 @@ def _create_plugin(cfgparser, section, menu):
         plugin = handler(cfgparser, section)
     else:
         # old-style plugin with config dict
-        hconf.update(cfgparser.items(section))
+        hconf |= cfgparser.items(section)
         hconf.pop('handler')
         plugin = handler(hconf)
         plugin.section = section
@@ -100,18 +96,17 @@ def _load_plugins(config, cfgparser):
             if path_chain[-1] == '':
                 path_chain = path_chain[:-1]
             name = tuple(path_chain)
+        elif s.startswith('auth:'):
+            menu = 'authenticators'
+            name = s[5:]
+        elif s.startswith('authz:'):
+            menu = 'authorizers'
+            name = s[6:]
+        elif s.startswith('store:'):
+            menu = 'stores'
+            name = s[6:]
         else:
-            if s.startswith('auth:'):
-                menu = 'authenticators'
-                name = s[5:]
-            elif s.startswith('authz:'):
-                menu = 'authorizers'
-                name = s[6:]
-            elif s.startswith('store:'):
-                menu = 'stores'
-                name = s[6:]
-            else:
-                raise ValueError('Invalid section name [%s].\n' % s)
+            raise ValueError('Invalid section name [%s].\n' % s)
 
         try:
             config[menu][name] = _create_plugin(cfgparser, s, menu)

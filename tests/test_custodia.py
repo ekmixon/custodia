@@ -172,13 +172,13 @@ def generate_all_keys(custodia_conf):
     cli_kid = "clikid"
     ss_key = jwk.JWK(generate='RSA', kid=srv_kid, use="sig")
     se_key = jwk.JWK(generate='RSA', kid=srv_kid, use="enc")
-    store.set('kemkeys/sig/%s' % srv_kid, ss_key.export())
-    store.set('kemkeys/enc/%s' % srv_kid, se_key.export())
+    store.set(f'kemkeys/sig/{srv_kid}', ss_key.export())
+    store.set(f'kemkeys/enc/{srv_kid}', se_key.export())
 
     cs_key = jwk.JWK(generate='RSA', kid=cli_kid, use="sig")
     ce_key = jwk.JWK(generate='RSA', kid=cli_kid, use="enc")
-    store.set('kemkeys/sig/%s' % cli_kid, cs_key.export_public())
-    store.set('kemkeys/enc/%s' % cli_kid, ce_key.export_public())
+    store.set(f'kemkeys/sig/{cli_kid}', cs_key.export_public())
+    store.set(f'kemkeys/enc/{cli_kid}', ce_key.export_public())
     return ([ss_key.export_public(), se_key.export_public()],
             [cs_key.export(), ce_key.export()])
 
@@ -226,12 +226,11 @@ class CustodiaTests(unittest.TestCase):
         for i in range(max_retries):
             with open(test_log_file, 'r') as logfile:
                 lines = [line for line in logfile if ' server ' in line]
-                if not lines:
-                    time.sleep(0.5)
-                    retry_number = i + 1
-                else:
+                if lines:
                     break
 
+                time.sleep(0.5)
+                retry_number = i + 1
         if retry_number == max_retries:
             raise AssertionError(
                 "Perphaps custodia server was not started correctly")
@@ -284,7 +283,7 @@ class CustodiaTests(unittest.TestCase):
             try:
                 s.connect(address)
             except OSError as e:
-                self.fail("Server socket unavailable: {}".format(e))
+                self.fail(f"Server socket unavailable: {e}")
             finally:
                 s.close()
         else:
@@ -294,7 +293,7 @@ class CustodiaTests(unittest.TestCase):
                     (host, int(port)), timeout=timeout
                 ).close()
             except OSError as e:
-                self.fail("Server socket unavailable: {}".format(e))
+                self.fail(f"Server socket unavailable: {e}")
 
     def setUp(self):
         if self.custodia_process.poll() is not None:
@@ -314,12 +313,11 @@ class CustodiaTests(unittest.TestCase):
             if e.returncode == 1:
                 # HTTP error, reraise
                 raise
-            else:
-                # other other
-                out = e.output
-                if not isinstance(out, six.text_type):
-                    out = out.decode('utf-8')
-                self.fail(out)
+            # other other
+            out = e.output
+            if not isinstance(out, six.text_type):
+                out = out.decode('utf-8')
+            self.fail(out)
 
         if not isinstance(out, six.text_type):
             out = out.decode('utf-8')
@@ -332,7 +330,7 @@ class CustodiaTests(unittest.TestCase):
     def test_0_0_setup(self):
         self.admin.create_container('fwd')
         self.admin.create_container('sak')
-        self.admin.set_secret('sak/' + self.test_auth_id, self.test_auth_key)
+        self.admin.set_secret(f'sak/{self.test_auth_id}', self.test_auth_key)
         self.admin.create_container('test')
 
     def test_0_create_container(self):
@@ -349,7 +347,7 @@ class CustodiaTests(unittest.TestCase):
 
     def test_1_set_simple_key(self):
         self.client.set_secret('test/key', 'VmVycnlTZWNyZXQK')
-        urlkey = 'test/{}'.format(quote_plus('http://localhost:5000'))
+        urlkey = f"test/{quote_plus('http://localhost:5000')}"
         self.client.set_secret(urlkey, 'path with /')
 
     def test_1_set_simple_key_cli(self):
@@ -489,12 +487,17 @@ class CustodiaHTTPSTests(CustodiaTests):
     def setUpClass(cls):
         super(CustodiaHTTPSTests, cls).setUpClass()
         cls.custodia_cli_args = cls.pexec + [
-            '-m', 'custodia.cli',
+            '-m',
+            'custodia.cli',
             '--verbose',
-            '--cafile', cls.ca_cert,
-            '--certfile', cls.client_cert,
-            '--keyfile', cls.client_key,
-            '--server', cls.socket_url + '/secrets'
+            '--cafile',
+            cls.ca_cert,
+            '--certfile',
+            cls.client_cert,
+            '--keyfile',
+            cls.client_key,
+            '--server',
+            f'{cls.socket_url}/secrets',
         ]
 
     @classmethod
@@ -519,7 +522,7 @@ class CustodiaHTTPSTests(CustodiaTests):
         self.fail(str(exc))
 
     def test_client_no_ca_trust(self):
-        client = CustodiaSimpleClient(self.socket_url + '/forwarder')
+        client = CustodiaSimpleClient(f'{self.socket_url}/forwarder')
         client.headers['REMOTE_USER'] = 'test'
         # XXX workaround for requests bug with urllib3 v1.22
         with self.assertRaises(RequestsConnSSLErrors) as e:
@@ -527,7 +530,7 @@ class CustodiaHTTPSTests(CustodiaTests):
         self.assert_ssl_error_msg(["CERTIFICATE_VERIFY_FAILED"], e.exception)
 
     def test_client_no_client_cert(self):
-        client = CustodiaSimpleClient(self.socket_url + '/forwarder')
+        client = CustodiaSimpleClient(f'{self.socket_url}/forwarder')
         client.headers['REMOTE_USER'] = 'test'
         client.set_ca_cert(self.ca_cert)
         # XXX workaround for requests bug with urllib3 v1.22

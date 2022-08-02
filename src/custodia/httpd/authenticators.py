@@ -44,12 +44,10 @@ class SimpleHeaderAuth(HTTPAuthenticator):
             self.logger.debug('SHA: No "headers" in request')
             return None
         value = request['headers'][self.header]
-        if self.value is not None:
-            # pylint: disable=unsupported-membership-test
-            if value not in self.value:
-                self.audit_svc_access(log.AUDIT_SVC_AUTH_FAIL,
-                                      request['client_id'], value)
-                return False
+        if self.value is not None and value not in self.value:
+            self.audit_svc_access(log.AUDIT_SVC_AUTH_FAIL,
+                                  request['client_id'], value)
+            return False
 
         self.audit_svc_access(log.AUDIT_SVC_AUTH_PASS,
                               request['client_id'], value)
@@ -120,8 +118,10 @@ class SimpleClientCertAuth(HTTPAuthenticator):
                     break
 
         dn = ', '.join(dn)
-        self.logger.debug('Client cert subject: {}, serial: {}'.format(
-            dn, client_cert.get('serialNumber')))
+        self.logger.debug(
+            f"Client cert subject: {dn}, serial: {client_cert.get('serialNumber')}"
+        )
+
 
         if name:
             self.audit_svc_access(log.AUDIT_SVC_AUTH_PASS,

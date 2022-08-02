@@ -9,8 +9,8 @@ from .base import CustodiaServerRunner
 
 class TestKey(CustodiaServerRunner):
     def test_store_key(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -34,8 +34,8 @@ class TestKey(CustodiaServerRunner):
         assert data['value'] == 'P@ssw0rd'
 
     def test_store_key_again(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -72,8 +72,8 @@ class TestKey(CustodiaServerRunner):
         assert data['value'] == 'P@ssw0rd'
 
     def test_store_key_forbidden_key(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -92,9 +92,9 @@ class TestKey(CustodiaServerRunner):
 
     def test_store_key_not_valid_container(self, custodia_server):
         bucket_number = self.get_unique_number()
-        container = 'secrets/bucket{}/'.format(bucket_number)
-        invalid_container = 'secrets/invalid_bucket{}/'.format(bucket_number)
-        mykey_with_ivalid_bucket = '{}mykey'.format(invalid_container)
+        container = f'secrets/bucket{bucket_number}/'
+        invalid_container = f'secrets/invalid_bucket{bucket_number}/'
+        mykey_with_ivalid_bucket = f'{invalid_container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -110,8 +110,8 @@ class TestKey(CustodiaServerRunner):
         assert resp.text == '[]'
 
     def test_store_key_directory_instead_of_key(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey_dir = '{}mykey/'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey_dir = f'{container}mykey/'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -126,8 +126,8 @@ class TestKey(CustodiaServerRunner):
         assert resp.text == '[]'
 
     def test_get_key(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -153,8 +153,8 @@ class TestKey(CustodiaServerRunner):
         # there need to be application/octet-stream version
 
     def test_get_key_empty_key(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -169,8 +169,8 @@ class TestKey(CustodiaServerRunner):
         # there need to be application/octet-stream version
 
     def test_get_key_forbidden_access(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -191,8 +191,8 @@ class TestKey(CustodiaServerRunner):
         # there need to be application/octet-stream version
 
     def test_delete_key(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -226,8 +226,8 @@ class TestKey(CustodiaServerRunner):
         assert resp.status_code == 404
 
     def test_delete_key_empty_key(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
@@ -240,8 +240,8 @@ class TestKey(CustodiaServerRunner):
         assert resp.status_code == 404
 
     def test_delete_forbidden_access(self, custodia_server):
-        container = 'secrets/bucket{}/'.format(self.get_unique_number())
-        mykey = '{}mykey'.format(container)
+        container = f'secrets/bucket{self.get_unique_number()}/'
+        mykey = f'{container}mykey'
 
         resp = custodia_server.post(container, headers=self.request_headers)
         assert resp.status_code == 201
